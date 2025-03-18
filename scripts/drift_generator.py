@@ -1,73 +1,85 @@
 import random
 
-from scripts.enums import WordErrorType
+from scripts.enums import WordErrorType, TypographicalErrorType
+from scripts.constants import PHONETIC_REPLACEMENTS, KEYBOARD_NEIGHBORS, ALPHABET
 
 
-def typographical_errors(text, level=1):
+def typographical_errors(text: str, level: float = 0.1, seed: int = 42) -> str:
     """
     Simulate typographical errors (keyboard mistakes).
-    - Level 1: Minor typos
-    - Level 2: Letters swapped
-    - Level 3: Multiple errors
+    Introduces random errors like letter swaps, insertions, deletions, or replacements.
     """
+    random.seed(seed)
     text = list(text)
-    for i in range(len(text)):
-        if random.random() < (0.1 * level):  # Probability increases with level
-            # Swap with a nearby character (simulate keyboard mistake)
-            if i < len(text) - 1:
-                text[i], text[i + 1] = text[i + 1], text[i]
-    return ''.join(text)
 
-def phonetic_misspellings(text, level=1):
+    for i in range(len(text)):
+        if random.random() < level/5:  # Probability increases with level
+            # Randomly select an error type
+            error_type = random.choice(
+                [
+                    TypographicalErrorType.SWAP,
+                    TypographicalErrorType.DELETE,
+                    TypographicalErrorType.INSERT,
+                    TypographicalErrorType.REPLACE,
+                ]
+            )
+
+            match error_type:
+                case TypographicalErrorType.SWAP:
+                    if i < len(text) - 1:
+                        # Swap adjacent letters
+                        text[i], text[i + 1] = text[i + 1], text[i]
+
+                case TypographicalErrorType.DELETE:
+                    # Delete the character (simulate a typo)
+                    text[i] = ""  # Remove the character
+
+                case TypographicalErrorType.INSERT:
+                    # Insert a random character (simulate typing an extra letter)
+                    random_char = random.choice(list(ALPHABET))
+                    text.insert(i, random_char)
+                    i += 1  # Skip the next character to avoid repeated insertions
+
+                case TypographicalErrorType.REPLACE:
+                    if text[i].lower() in KEYBOARD_NEIGHBORS:
+                        text[i] = random.choice(KEYBOARD_NEIGHBORS[text[i].lower()])
+
+    return "".join(text)
+
+
+def phonetic_misspellings(text: str, level: float = 0.1, seed: int = 42) -> str:
     """
     Simulate phonetic misspellings (sound-based errors).
     - Level 1: Minor phonetic changes
     - Level 2: More phonetic changes
     - Level 3: Drift into text/chat language
     """
-    replacements = {
-        'a': ['a', 'e', '@'],
-        'e': ['e', '3'],
-        'i': ['i', '1'],
-        'o': ['o', '0'],
-        'u': ['u', 'you'],
-        'to': ['to', '2'],
-        'for': ['for', '4'],
-        'you': ['you', 'u'],
-        'the': ['the', 'da', 'd@']
-    }
+    random.seed(seed)
     words = text.split()
     for i in range(len(words)):
         word = words[i].lower()
-        for key, values in replacements.items():
-            if key in word and random.random() < (0.1 * level):  # Probability increases with level
+        for key, values in PHONETIC_REPLACEMENTS.items():
+            if (
+                key in word and random.random() < level/5
+            ):  # Probability increases with level
                 words[i] = random.choice(values)
-    return ' '.join(words)
+    return " ".join(words)
 
-def omission_errors(text, level=1):
-    """
-    Simulate omission errors (dropping letters).
-    - Level 1: Minor omissions
-    - Level 2: More omissions
-    - Level 3: Severe omissions (e.g., "I c u tmrw")
-    """
-    text = list(text)
-    for i in range(len(text)):
-        if random.random() < (0.1 * level):  # Probability increases with level
-            text[i] = ''  # Drop the character
-    return ''.join(text)
 
-def simulate_drift(text: str, error_type: WordErrorType, level:int=1):
+def simulate_drift(
+    text: str, error_type: WordErrorType, level: float = 0.1, seed=42
+) -> str:
     """
     Simulate drift based on the error type and level.
     """
     match error_type:
         case WordErrorType.TYPOGRAPHICAL:
-            return typographical_errors(text, level)
+            return typographical_errors(text=text, level=level, seed=seed)
         case WordErrorType.PHONETIC:
-            return phonetic_misspellings(text, level)
-        case WordErrorType.OMISSION:
-            return omission_errors(text, level)
-
+            return phonetic_misspellings(text=text, level=level, seed=seed)
+        case WordErrorType.MIX:
+            t1 = typographical_errors(text=text, level=level/5, seed=seed)
+            t2 = phonetic_misspellings(text=t1, level=level/5, seed=seed)
+            return t2
         case _:
-            raise ValueError("Invalid error type. Choose 'typographical', 'phonetic', or 'omission'.")
+            raise ValueError("Invalid error type. Choose 'typographical', 'phonetic'")
