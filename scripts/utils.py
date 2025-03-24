@@ -69,7 +69,7 @@ def generate_drifted_text(
 
 def plot_cosine_similarity_box_plots(
     levels: list[float],
-    error_type: WordErrorType,
+    error_type: str,
     X_list: list[np.ndarray],
     X_drifted_list: list[np.ndarray],
 ) -> None:
