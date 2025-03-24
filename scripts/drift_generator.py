@@ -78,8 +78,8 @@ def simulate_drift(
         case WordErrorType.PHONETIC:
             return phonetic_misspellings(text=text, level=level, seed=seed)
         case WordErrorType.MIX:
-            t1 = typographical_errors(text=text, level=level/5, seed=seed)
-            t2 = phonetic_misspellings(text=t1, level=level/5, seed=seed)
+            t1 = typographical_errors(text=text, level=level/2, seed=seed)
+            t2 = phonetic_misspellings(text=t1, level=level/2, seed=seed)
             return t2
         case _:
             raise ValueError("Invalid error type. Choose 'typographical', 'phonetic'")
